@@ -18,6 +18,6 @@ set(HELLOIMGUI_WIN32_NO_CONSOLE OFF)
 
 imgui_bundle_add_app(lightlink_view
         main.cpp
-        custom_widgets.cpp
+        widget/widget.cpp
         view/master_view.cpp
         )
