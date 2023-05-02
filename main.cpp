@@ -3,7 +3,6 @@
 #include <immvision/immvision.h>
 #include <opencv2/opencv.hpp>
 #include <imgui_tex_inspect/imgui_tex_inspect.h>
-#include <windows.h>
 #include "custom_widgets.h"
 
 class EntryPoint
@@ -12,7 +11,12 @@ class EntryPoint
 public:
     void Gui()
     {
-        Widget::setStyle();
+        static bool style=false;
+        if(!style)
+        {
+            Widget::setStyle();
+            style = true;
+        }
         ImGui::ShowDemoWindow();
     }
 
