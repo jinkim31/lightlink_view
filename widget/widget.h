@@ -30,6 +30,7 @@ enum class LedState
     OFF,
 };
 void LED(widget::LedState state, const std::string &text);
+bool Collapsable(const char* label);
 bool Master(const char *label, ImGuiTreeNodeFlags flags=0);
 
 // global variables

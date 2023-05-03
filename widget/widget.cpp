@@ -1,11 +1,14 @@
 #include "widget.h"
 #include "imgui_internal.h"
+#include <stack>
+#include <iostream>
 
 using namespace ImGui;
 
 widget::ColorPalette colorPalette;
-ImVec2 layerStart;
-ImVec2 layerSize;
+std::stack<ImVec2> layerMinStack;
+std::stack<ImVec2> layerMaxStack;
+std::stack<ImVec2> layerSizeStack;
 
 void widget::LED(widget::LedState state, const std::string &text = "")
 {
@@ -63,7 +66,7 @@ void widget::setStyle()
     colors[ImGuiCol_SliderGrabActive]     = widget::colorPalette.activeColor;
     colors[ImGuiCol_Button]               = widget::colorPalette.panelColor;
     colors[ImGuiCol_ButtonHovered]        = widget::colorPalette.hoverColor;
-    colors[ImGuiCol_ButtonActive]         = widget::colorPalette.hoverColor;
+    colors[ImGuiCol_ButtonActive]         = widget::colorPalette.activeLightColor;
     colors[ImGuiCol_Header]               = widget::colorPalette.panelColor;
     colors[ImGuiCol_HeaderHovered]        = widget::colorPalette.hoverColor;
     colors[ImGuiCol_HeaderActive]         = widget::colorPalette.activeColor;
@@ -106,55 +109,112 @@ void widget::setStyle()
 }
 
 
-void BeginLayer(ImVec2 size)
+ImRect BeginLayer(ImVec2 size)
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
-    layerSize = size;
-    layerStart = ImGui::GetCursorScreenPos();
+    ImVec2 layerMin = ImGui::GetCursorScreenPos();
+    ImVec2 layerMax;
+
+    if(size.x < 0 && size.y < 0)
+        layerMax = {layerMin.x + ImGui::GetContentRegionAvail().x, layerMin.y + ImGui::GetContentRegionAvail().y};
+    else if(size.x < 0 && size.y > 0)
+        layerMax = {layerMin.x + ImGui::GetContentRegionAvail().x, layerMin.y + size.y};
+    else if(size.x > 0 && size.y < 0)
+        layerMax ={layerMin.x + size.x, layerMin.y + ImGui::GetContentRegionAvail().y};
+    else
+        layerMax ={layerMin.x + size.x, layerMin.y + size.y};
+
+    if(!layerMaxStack.empty())
+        layerMax = ImMin(layerMax, {layerMaxStack.top().x-ImGui::GetStyle().ItemSpacing.x, layerMaxStack.top().y-ImGui::GetStyle().ItemSpacing.x});
+
+    drawList->AddRectFilled(layerMin, layerMax, ImColor(ImGui::GetStyleColorVec4(ImGuiCol_ChildBg)));
+    //drawList->AddRect(layerMin, layerMax, ImColor(widget::color(255,0,0)));
+    Dummy({0, 0});// dummy for upper spacing
+    layerMinStack.push(layerMin);
+    layerMaxStack.push(layerMax);
+    layerSizeStack.emplace(layerMax.x - layerMin.x, layerMax.y - layerMin.y);
 
     BeginGroup();
-    Indent(10);
-    if(size.x < 0 && size.y < 0)
-        drawList->AddRectFilled(layerStart, {layerStart.x + ImGui::GetContentRegionAvail().x, layerStart.y + ImGui::GetContentRegionAvail().y}, ImColor(ImGui::GetStyleColorVec4(ImGuiCol_ChildBg)));
-    else if(size.x < 0 && size.y > 0)
-        drawList->AddRectFilled(layerStart, {layerStart.x + ImGui::GetContentRegionAvail().x, layerStart.y + size.y}, ImColor(ImGui::GetStyleColorVec4(ImGuiCol_ChildBg)));
-    else if(size.x > 0 && size.y < 0)
-        drawList->AddRectFilled(layerStart, {layerStart.x + size.x, layerStart.y + ImGui::GetContentRegionAvail().y}, ImColor(ImGui::GetStyleColorVec4(ImGuiCol_ChildBg)));
-    else
-        drawList->AddRectFilled(layerStart, {layerStart.x + size.x, layerStart.y + size.y}, ImColor(ImGui::GetStyleColorVec4(ImGuiCol_ChildBg)));
+    Indent(GetStyle().FramePadding.x);
 
-    Dummy({0, 0});
+    ImRect bb;
+    bb.Min = layerMin;
+    bb.Max = layerMax;
+    return bb;
 }
 
 void EndLayer()
 {
-    ImVec2 layerEnd = ImGui::GetCursorScreenPos();
-    ImVec2 dummySize = {layerSize.x - (layerEnd.x - layerStart.x), layerSize.y - (layerEnd.y - layerStart.y)};
+    ImVec2 childEnd = ImGui::GetCursorScreenPos();
+    ImVec2 dummySize = {layerMaxStack.top().x - childEnd.x, layerMaxStack.top().y - childEnd.y};
     ImGui::Dummy(dummySize);
-    Unindent(10);
+    Unindent(GetStyle().FramePadding.x);
     EndGroup();
 
-    ImDrawList* drawList = ImGui::GetWindowDrawList();
-    drawList->AddRectFilled(layerEnd, {layerEnd.x + dummySize.x, layerEnd.y + dummySize.y}, ImColor(widget::color(255,0,0)));
-
+    layerMinStack.pop();
+    layerMaxStack.pop();
+    layerSizeStack.pop();
 }
 
+ImVec2 LayerGetContentRegionAvail()
+{
+    return layerSizeStack.top();
+}
+
+bool TriangleToggle()
+{
+    ImVec2 origin = ImGui::GetCursorScreenPos();
+
+    SetNextItemWidth(30);
+    Button(" ##triangle");
+
+    origin = {origin.x+10, origin.y + 7};
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    drawList->AddTriangleFilled(
+            {origin.x, origin.y},
+            {origin.x+7, origin.y+7},
+            {origin.x, origin.y+14},
+            ImColor{ImGui::GetStyleColorVec4(ImGuiCol_Text)});
+
+    return true;
+}
+
+void HLine()
+{
+    ImVec2 start = ImGui::GetCursorScreenPos();
+    ImVec2 end = {start.x + LayerGetContentRegionAvail().x, start.y};
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    drawList->AddLine(start, end, ImColor(255, 0, 0));
+    Dummy({0,0});
+}
 bool widget::Master(const char *label, ImGuiTreeNodeFlags flags)
 {
-    BeginLayer({-1, 200});
-    ImGui::Text("asdf1");
-    ImGui::Text("asdf2");
-    ImGui::Text("asdf3");
-    EndLayer();
+    BeginLayer({-1, 40});
+    {
+        ImGui::AlignTextToFramePadding();
+        ArrowButton("arrow", ImGuiDir_Down);
+        SameLine();
+        Dummy({10, 0});
+        SameLine();
+        LED(LedState::GREEN);
+        SameLine();
+        Text("Master 0");
+        SameLine(LayerGetContentRegionAvail().x-90);
+        SetNextItemWidth(30);
+        Button("S##Master 0");
+        SameLine(LayerGetContentRegionAvail().x-60);
+        SetNextItemWidth(30);
+        Button("A##Master 0");
+        SameLine(LayerGetContentRegionAvail().x-30);
+        SetNextItemWidth(30);
+        Button("D##Master 0");
+    }EndLayer();
 
-    BeginLayer({-1, 200});
-    ImGui::Text("asdf1");
-    ImGui::Text("asdf2");
-    ImGui::Text("asdf3");
-    EndLayer();
-
-    ImGui::Text("asdf1");
-    ImGui::Text("asdf2");
-    ImGui::Text("asdf3");
     return true;
+}
+
+bool widget::Collapsable(const char *label)
+{
+
+    return false;
 }
