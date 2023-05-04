@@ -1,0 +1,9 @@
+[submodule "lib/lightlink"]
+	path = lib/lightlink
+	url = https://github.com/jinkim31/lightlink.git
+[submodule "lib/event_thread"]
+	path = lib/event_thread
+	url = https://github.com/jinkim31/event_thread.git
+[submodule "lib/IconFontCppHeaders"]
+	path = lib/IconFontCppHeaders
+	url = https://github.com/juliettef/IconFontCppHeaders.git

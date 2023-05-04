@@ -2,6 +2,8 @@
 #include "imgui_internal.h"
 #include <stack>
 #include <iostream>
+#include <IconsFontAwesome5.h>
+#include <array>
 
 using namespace ImGui;
 
@@ -16,8 +18,8 @@ void widget::LED(widget::LedState state, const std::string &text = "")
     const ImVec2 p = ImGui::GetCursorScreenPos();
     static float sz = 10.0f;
     const int circle_segments = 12;
-    draw_list->AddCircleFilled(ImVec2(p.x + sz*0.5f, p.y + sz*0.5f), sz*0.5f, ImColor(widget::color(0, 255, 120)), circle_segments);
-    draw_list->AddCircle(ImVec2(p.x + sz*0.5f, p.y + sz*0.5f), sz*0.5f, ImColor(widget::colorPalette.borderColor), circle_segments);
+    draw_list->AddCircleFilled(ImVec2(p.x + sz*0.5f, p.y  + GetFrameHeight()/2), sz*0.5f, ImColor(widget::color(0, 255, 120)), circle_segments);
+    draw_list->AddCircle(ImVec2(p.x + sz*0.5f, p.y + GetFrameHeight()/2), sz*0.5f, ImColor(widget::colorPalette.borderColor), circle_segments);
     ImGuiStyle style = ImGui::GetStyle();
     ImGui::Dummy({sz, 0});
 }
@@ -89,6 +91,9 @@ void widget::setStyle()
     colors[ImGuiCol_TabUnfocused]         = widget::colorPalette.panelColor;
     colors[ImGuiCol_TabUnfocusedActive]   = widget::colorPalette.borderColor;
     colors[ImGuiCol_TabHovered]           = widget::colorPalette.activeLightColor;
+    colors[ImGuiCol_TableHeaderBg]          = widget::colorPalette.panelColor;
+    colors[ImGuiCol_TableBorderLight]          = widget::colorPalette.borderColor;
+    colors[ImGuiCol_TableBorderStrong]          = widget::colorPalette.borderColor;
 
     style.WindowRounding    = 0.0f;
     style.ChildRounding     = 0.0f;
@@ -99,7 +104,7 @@ void widget::setStyle()
     style.TabRounding       = 0.0f;
 
     style.WindowPadding = {8, 8};
-    style.FramePadding = {8, 5};
+    style.FramePadding = {8, 8};
     style.ItemSpacing = {8, 8};
     style.ScrollbarRounding = 14;
     style.ScrollbarSize = 14;
@@ -109,7 +114,7 @@ void widget::setStyle()
 }
 
 
-ImRect BeginLayer(ImVec2 size)
+void widget::BeginLayer(ImVec2 size)
 {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImVec2 layerMin = ImGui::GetCursorScreenPos();
@@ -129,26 +134,21 @@ ImRect BeginLayer(ImVec2 size)
 
     drawList->AddRectFilled(layerMin, layerMax, ImColor(ImGui::GetStyleColorVec4(ImGuiCol_ChildBg)));
     //drawList->AddRect(layerMin, layerMax, ImColor(widget::color(255,0,0)));
-    Dummy({0, 0});// dummy for upper spacing
+    //Dummy({0, 0});// dummy for upper spacing
     layerMinStack.push(layerMin);
     layerMaxStack.push(layerMax);
     layerSizeStack.emplace(layerMax.x - layerMin.x, layerMax.y - layerMin.y);
 
     BeginGroup();
-    Indent(GetStyle().FramePadding.x);
-
-    ImRect bb;
-    bb.Min = layerMin;
-    bb.Max = layerMax;
-    return bb;
+    //Indent(GetStyle().FramePadding.x);
 }
 
-void EndLayer()
+void widget::EndLayer()
 {
     ImVec2 childEnd = ImGui::GetCursorScreenPos();
     ImVec2 dummySize = {layerMaxStack.top().x - childEnd.x, layerMaxStack.top().y - childEnd.y};
     ImGui::Dummy(dummySize);
-    Unindent(GetStyle().FramePadding.x);
+    //Unindent(GetStyle().FramePadding.x);
     EndGroup();
 
     layerMinStack.pop();
@@ -156,12 +156,7 @@ void EndLayer()
     layerSizeStack.pop();
 }
 
-ImVec2 LayerGetContentRegionAvail()
-{
-    return layerSizeStack.top();
-}
-
-bool TriangleToggle()
+bool widget::TriangleToggle()
 {
     ImVec2 origin = ImGui::GetCursorScreenPos();
 
@@ -179,35 +174,40 @@ bool TriangleToggle()
     return true;
 }
 
-void HLine()
+void widget::HLine()
 {
     ImVec2 start = ImGui::GetCursorScreenPos();
-    ImVec2 end = {start.x + LayerGetContentRegionAvail().x, start.y};
+    ImVec2 end = {start.x + GetContentRegionAvail().x, start.y};
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     drawList->AddLine(start, end, ImColor(255, 0, 0));
     Dummy({0,0});
 }
-bool widget::Master(const char *label, ImGuiTreeNodeFlags flags)
+bool widget::Master(Model::MasterModel &masterModel)
 {
-    BeginLayer({-1, 40});
+    BeginLayer({-1, GetFrameHeight()});
     {
         ImGui::AlignTextToFramePadding();
         ArrowButton("arrow", ImGuiDir_Down);
         SameLine();
-        Dummy({10, 0});
+        Dummy({0, 0});
         SameLine();
         LED(LedState::GREEN);
         SameLine();
-        Text("Master 0");
-        SameLine(LayerGetContentRegionAvail().x-90);
+        Text("%s", masterModel.getPortName().c_str());
+        SameLine(GetContentRegionAvail().x-90);
         SetNextItemWidth(30);
-        Button("S##Master 0");
-        SameLine(LayerGetContentRegionAvail().x-60);
+        SmallButton(ICON_FA_PLAY "##Master 0");
+        SameLine(GetContentRegionAvail().x-60);
         SetNextItemWidth(30);
-        Button("A##Master 0");
-        SameLine(LayerGetContentRegionAvail().x-30);
+        if(SmallButton(ICON_FA_SEARCH "##Master 0"))
+        {
+            std::cout<<"search start"<<std::endl;
+            std::vector<int> baudRates;
+            masterModel.search(baudRates);
+        }
+        SameLine(GetContentRegionAvail().x-30);
         SetNextItemWidth(30);
-        Button("D##Master 0");
+        SmallButton(ICON_FA_TRASH "##Master 0");
     }EndLayer();
 
     return true;
@@ -217,4 +217,45 @@ bool widget::Collapsable(const char *label)
 {
 
     return false;
+}
+
+void widget::PortModal(Model &model)
+{
+    std::vector<const char*> namesCharPtr;
+    namesCharPtr.reserve(model.getPortNames().size());
+    for(const auto& name : model.getPortNames())
+        namesCharPtr.push_back(name.c_str());
+    static int nameIndex = 0;
+    ImGui::Combo("#combo_port_names", &nameIndex, &namesCharPtr[0], model.getPortNames().size());
+
+    if(Button("Add"))
+    {
+        model.addMaster(model.getPortNames()[nameIndex]);
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::SameLine();
+
+    if(Button("Cancel"))
+        ImGui::CloseCurrentPopup();
+}
+
+void widget::loadIconFont()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->AddFontDefault();
+    float baseFontSize = 12.0f; // 13.0f is the size of the default font. Change to the font size you use.
+    float iconFontSize = baseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    icons_config.GlyphMinAdvanceX = iconFontSize;
+    io.Fonts->AddFontFromFileTTF( "assets/icons/" FONT_ICON_FILE_NAME_FAR, iconFontSize, &icons_config, icons_ranges );
+}
+
+bool widget::Slave(Model::SlaveModel &slaveModel)
+{
+    std::string buttonString = ICON_FA_MICROCHIP "  [" + std::to_string(slaveModel.mBaudRate) +"] ID:" + std::to_string(slaveModel.mId);
+    return ImGui::Button(buttonString.c_str(), {ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()});
 }

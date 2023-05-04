@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
 project(lightlink_view)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+
+add_subdirectory(lib/lightlink)
+add_subdirectory(lib/event_thread)
 
 include(FetchContent)
 Set(FETCHCONTENT_QUIET FALSE)
@@ -18,6 +21,14 @@ set(HELLOIMGUI_WIN32_NO_CONSOLE OFF)
 
 imgui_bundle_add_app(lightlink_view
         main.cpp
-        widget/widget.cpp
-        view/master_view.cpp
+        widget.cpp
+        model.cpp
+        master_acquisition_thread.cpp
         )
+
+target_link_libraries(lightlink_view PRIVATE
+        lightlink
+        event_thread
+        )
+target_include_directories(lightlink_view PRIVATE
+        lib/IconFontCppHeaders)

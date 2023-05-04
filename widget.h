@@ -3,6 +3,7 @@
 
 #include "imgui.h"
 #include "implot/implot.h"
+#include "model.h"
 
 namespace widget
 {
@@ -31,10 +32,17 @@ enum class LedState
 };
 void LED(widget::LedState state, const std::string &text);
 bool Collapsable(const char* label);
-bool Master(const char *label, ImGuiTreeNodeFlags flags=0);
-
+bool Master(Model::MasterModel &masterModel);
+bool Slave(Model::SlaveModel& slaveModel);
+void loadIconFont();
+void BeginLayer(ImVec2 size);
+void EndLayer();
+bool TriangleToggle();
+void HLine();
+void PortModal(Model &model);
+bool widget::Master(Model::MasterModel &masterModel);
 // global variables
-    static ColorPalette colorPalette;
+static ColorPalette colorPalette;
 }
 
 #endif
