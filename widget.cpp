@@ -39,7 +39,7 @@ void widget::setStyle()
     widget::colorPalette.activeLightColor   = color(169, 176, 190);
     widget::colorPalette.textColor          = color(0,0,0);
     widget::colorPalette.textDisabledColor  = color(100, 100, 100);
-    widget::colorPalette.objectColor        = color(167, 167, 167);
+    widget::colorPalette.objectColor        = color(110, 110, 110);
 
     auto& style = ImGui::GetStyle();
     ImVec4* colors = style.Colors;
@@ -194,6 +194,7 @@ bool widget::Master(Model::MasterModel &masterModel)
         LED(LedState::GREEN);
         SameLine();
         Text("%s", masterModel.getPortName().c_str());
+        ImGui::PushStyleColor(ImGuiCol_Text, colorPalette.objectColor);
         SameLine(GetContentRegionAvail().x-90);
         SetNextItemWidth(30);
         SmallButton(ICON_FA_PLAY "##Master 0");
@@ -208,6 +209,7 @@ bool widget::Master(Model::MasterModel &masterModel)
         SameLine(GetContentRegionAvail().x-30);
         SetNextItemWidth(30);
         SmallButton(ICON_FA_TRASH "##Master 0");
+        ImGui::PopStyleColor();
     }EndLayer();
 
     return true;

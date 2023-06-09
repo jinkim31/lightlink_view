@@ -9,13 +9,14 @@ MasterAcquisitionThread::MasterAcquisitionThread(void *masterModelPtr, const std
 {
     mMasterModelPtr = masterModelPtr;
     mPortName = portName;
-    mMasterHandle = LLINK_Master_createHandle();
+    mMasterHandle = LLINK_Master_create();
+    setLoopFreq(1000);
 }
 
 MasterAcquisitionThread::~MasterAcquisitionThread()
 {
     LLINK_Master_close(mMasterHandle);
-    LLINK_Master_destroyHandle(mMasterHandle);
+    LLINK_Master_destroy(mMasterHandle);
 }
 
 void MasterAcquisitionThread::onStart()
@@ -46,13 +47,13 @@ void MasterAcquisitionThread::search(std::vector<int> baudRates)
     if(! LLINK_Master_isOpen(mMasterHandle))
         return;
 
-    for(int i=0; i<255; i++)
+    for(int i=0; i<5; i++)
     {
         if(LLINK_Master_pingDevice(mMasterHandle, i, 10) == LLINK_ERROR_NO_ERROR)
         {
             std::cout<<"found device at " << i <<std::endl;
             LLINK_Master_Summary summary;
-            LLINK_Master_summarizeDevice(mMasterHandle, i, &summary, 100);
+            LLINK_Master_summarizeDevice(mMasterHandle, i, &summary, 1000);
             ((Model::MasterModel*)mMasterModelPtr)->callQueued(&Model::MasterModel::notifySlaveFound, 115200, i, summary);
         }
     }

@@ -40,7 +40,7 @@ void EndLayer();
 bool TriangleToggle();
 void HLine();
 void PortModal(Model &model);
-bool widget::Master(Model::MasterModel &masterModel);
+bool Master(Model::MasterModel &masterModel);
 // global variables
 static ColorPalette colorPalette;
 }

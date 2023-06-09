@@ -55,7 +55,6 @@ public:
 
             }
 
-
             /*
             if(ImGui::Button("Add port", {ImGui::GetContentRegionAvail().x ,30}))
                 openModal = true;
@@ -111,6 +110,7 @@ public:
 
                 LLINK_Master_Summary* summary = &model.getMasters()[selectedPortName]->getSlaves()[selectedBaudRate][selectedID]->mSummary;
 
+                Model::SlaveTableModel& table = &model.getMasters()[selectedPortName]->getSlaves()[selectedBaudRate][selectedID].
                 const char LLINK_ACCESS_STRING[4][13] = {"inaccessible", "read", "write", "readwrite"};
 
                 for(int typeIndex = 0; typeIndex < summary->nObjectTypes; typeIndex++)

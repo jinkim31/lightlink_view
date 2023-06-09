@@ -15,6 +15,21 @@ using namespace ethr;
 class Model
 {
 public:
+    class SlaveTableModel
+    {
+    public:
+        struct Object{
+            std::string name;
+            LLINK_Access access;
+            std::unique_ptr<uint8_t[]> value;
+            bool isValueValid;
+        };
+        SlaveTableModel(LLINK_Master_Summary &summary);
+        std::vector<std::vector<Object>>& getObjects();
+    private:
+        std::vector<std::vector<Object>> mObjects;
+    };
+
     class SlaveModel
     {
     public:
@@ -22,7 +37,7 @@ public:
         ~SlaveModel();
         int mBaudRate;
         uint8_t mId;
-        LLINK_Master_Summary mSummary;
+        SlaveTableModel mTable;
     };
 
     class MasterModel : public EThreadObject
