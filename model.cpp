@@ -2,28 +2,22 @@
 
 Model::SlaveTableModel::SlaveTableModel(LLINK_Master_Summary &summary)
 {
-    mObjects.resize(summary.nObjectTypes);
     for(int typeIndex = 0; typeIndex < summary.nObjectTypes; typeIndex++)
     {
-        std::vector<Object>& typedObjectVec = mObjects[typeIndex];
-
         LLINK_Master_TypedObjectList* typedList = summary.objectLists + typeIndex;
-        typedObjectVec.resize(typedList->nObjects);
+        mTable.emplace_back(typedList->typeName, typedList->typeSize);
         for(int objectIndex = 0; objectIndex < typedList->nObjects; objectIndex++)
         {
             LLINK_Master_Object* object = typedList->objects+objectIndex;
-            typedObjectVec[objectIndex].name = std::string(object->name);
-            typedObjectVec[objectIndex].access = object->access;
-            typedObjectVec[objectIndex].value = std::make_unique<uint8_t[]>(typedList->typeSize);
-            typedObjectVec[objectIndex].isValueValid= false;
+            (mTable.end()-1)->addObject(object->name, object->access);
         }
     }
     LLINK_Master_freeSummary(&summary);
 }
 
-std::vector<std::vector<Model::SlaveTableModel::Object>> &Model::SlaveTableModel::getObjects()
+std::vector<Model::SlaveTableModel::TypedList> &Model::SlaveTableModel::get()
 {
-    return mObjects;
+    return mTable;
 }
 
 Model::SlaveModel::SlaveModel(int baudRate, int id, LLINK_Master_Summary summary) : mTable(summary)
@@ -35,6 +29,21 @@ Model::SlaveModel::SlaveModel(int baudRate, int id, LLINK_Master_Summary summary
 Model::SlaveModel::~SlaveModel()
 {
 
+}
+
+int Model::SlaveModel::getBaudRate()
+{
+    return mBaudRate;
+}
+
+Model::SlaveTableModel &Model::SlaveModel::getTableModel()
+{
+    return mTable;
+}
+
+uint8_t Model::SlaveModel::getID()
+{
+    return mId;
 }
 
 
@@ -142,3 +151,51 @@ Model::AddMasterError Model::addMaster(const std::string &portName)
     return Model::AddMasterError::NO_ERROR;
 }
 
+Model::SlaveTableModel::TypedList::Object::Object(const std::string &name, LLINK_Access access, size_t typeSize)
+{
+    mName = name;
+    mAccess = access;
+    mIsValueValid = false;
+    mValue.resize(typeSize);
+}
+
+const std::string &Model::SlaveTableModel::TypedList::Object::getName()
+{
+    return mName;
+}
+
+LLINK_Access Model::SlaveTableModel::TypedList::Object::getAccess()
+{
+    return mAccess;
+}
+
+const std::vector<uint8_t>& Model::SlaveTableModel::TypedList::Object::getValue()
+{
+    return mValue;
+}
+
+Model::SlaveTableModel::TypedList::TypedList(const std::string &typeName, const size_t &typeSize)
+{
+    mTypeName = typeName;
+    mTypeSize = typeSize;
+}
+
+void Model::SlaveTableModel::TypedList::addObject(const std::string &name, LLINK_Access access)
+{
+    mObjects.emplace_back(name, access, mTypeSize);
+}
+
+std::vector<Model::SlaveTableModel::TypedList::Object> & Model::SlaveTableModel::TypedList::getObjects()
+{
+    return mObjects;
+}
+
+const std::string &Model::SlaveTableModel::TypedList::getTypeName()
+{
+    return mTypeName;
+}
+
+const size_t &Model::SlaveTableModel::TypedList::getTypeSize()
+{
+    return mTypeSize;
+}

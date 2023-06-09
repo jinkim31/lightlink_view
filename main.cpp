@@ -108,31 +108,31 @@ public:
                 ImGui::TableSetupColumn("access");
                 ImGui::TableHeadersRow();
 
-                LLINK_Master_Summary* summary = &model.getMasters()[selectedPortName]->getSlaves()[selectedBaudRate][selectedID]->mSummary;
+                Model::SlaveTableModel& table = model.getMasters()[selectedPortName]->getSlaves()[selectedBaudRate][selectedID]->getTableModel();
 
-                Model::SlaveTableModel& table = &model.getMasters()[selectedPortName]->getSlaves()[selectedBaudRate][selectedID].
                 const char LLINK_ACCESS_STRING[4][13] = {"inaccessible", "read", "write", "readwrite"};
 
-                for(int typeIndex = 0; typeIndex < summary->nObjectTypes; typeIndex++)
+                for(int typeIndex = 0; typeIndex < table.get().size(); typeIndex++)
                 {
-                    LLINK_Master_TypedObjectList* typedList = summary->objectLists + typeIndex;
-                    for(int objectIndex = 0; objectIndex < typedList->nObjects; objectIndex++)
+                    Model::SlaveTableModel::TypedList& typedList = table.get()[typeIndex];
+                    for(int objectIndex = 0; objectIndex < typedList.getObjects().size(); objectIndex++)
                     {
                         ImGui::TableNextRow();
 
-                        LLINK_Master_Object* object = typedList->objects+objectIndex;
+                        Model::SlaveTableModel::TypedList::Object& object = typedList.getObjects()[objectIndex];
+
                         ImGui::TableSetColumnIndex(0);
                         ImGui::Text("%d", typeIndex);
                         ImGui::TableSetColumnIndex(1);
                         ImGui::Text("%d", objectIndex);
                         ImGui::TableSetColumnIndex(2);
-                        ImGui::Text("%s", object->name);
+                        ImGui::Text("%s", object.getName().c_str());
                         ImGui::TableSetColumnIndex(3);
-                        ImGui::Text("%s", typedList->typeName);
+                        ImGui::Text("%s", typedList.getTypeName().c_str());
                         ImGui::TableSetColumnIndex(4);
-                        ImGui::Text("%d", typedList->typeSize);
+                        ImGui::Text("%d", typedList.getTypeSize());
                         ImGui::TableSetColumnIndex(5);
-                        ImGui::Text("%s", LLINK_ACCESS_STRING[object->access]);
+                        ImGui::Text("%s", LLINK_ACCESS_STRING[object.getAccess()]);
                     }
                 }
 

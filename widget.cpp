@@ -258,6 +258,6 @@ void widget::loadIconFont()
 
 bool widget::Slave(Model::SlaveModel &slaveModel)
 {
-    std::string buttonString = ICON_FA_MICROCHIP "  [" + std::to_string(slaveModel.mBaudRate) +"] ID:" + std::to_string(slaveModel.mId);
+    std::string buttonString = ICON_FA_MICROCHIP "  [" + std::to_string(slaveModel.getBaudRate()) +"] ID:" + std::to_string(slaveModel.getID());
     return ImGui::Button(buttonString.c_str(), {ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()});
 }
